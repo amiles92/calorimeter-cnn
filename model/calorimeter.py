@@ -52,14 +52,15 @@ class Calorimeter:
 
     def positions(self, active=True):
         '''Provide an array of the z coordinates for the start of each layer. If active=True, only return the active layers'''
-        return np.array([v.z for v in self._volumes if not active or v.layer._yield>0])
+        return np.array([v.z for v in self._volumes if not active or v.layer._active>0])
 
     def ionisations(self, active=True):
         '''Provide a list of the ionisation deposited in each of the layers. If active=True, only return the active layers'''
-        return np.array([v.layer._ionisation for v in self._volumes if not active or v.layer._yield>0])
+        return np.array([v.layer._ionisation for v in self._volumes if not active or v.layer._active>0])
 
     def ions_by_layer(self, active=True):
-        return np.array([v.layer._cells for v in self._volumes if not active or v.layer._yield>0])
+
+        return np.array([v.layer._cells for v in self._volumes if not active or v.layer._active>0])
 
     def ions_missed(self):
         missed = []

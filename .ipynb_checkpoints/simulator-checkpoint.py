@@ -6,27 +6,31 @@ import time
 
 # Layer properties
 print("* Initialising calorimeter *")
+passive_depth = 1
+passive_X0 = 1
+passive = model.Layer('lead', passive_X0, passive_depth, 1.0, 1, 0.0)
+active_depth = 1
+active_width = 32
+num_cells = 32
+print("Cell size = " + str(active_width/num_cells))
+active = model.Layer('scin', 0.01, active_depth, active_width, num_cells, 1.0)
 
-num_cells = 30
+num_layers = 30
 mycal = model.Calorimeter()
-active_component = [0.01, 1.0, 1.0]
-passive_component = [1, 1.5, 0.0]
-# component = [material density, cell_height, response]
-depth = [40, 100]
-short = model.Layer('short',depth[0], num_cells, passive_component, active_component)
-long = model.Layer('long', depth[1], num_cells, passive_component, active_component)
-mycal.add_layers([short, long])
+for i in range(num_layers):
+    mycal.add_layers([passive, active])
 
 counts_all_runs = []
 en1 = np.array([0.1])
-en2 = np.arange(2.0, 22.0, 2.0)
+# en2 = np.arange(2.0, 12.0, 2.0)
+en2 = np.array([20.0])
 energies = np.append(en1, en2)
 direct = "simulations/single_hits/"
 
 energies_dict = {}
 
 # some predefined particle properties
-sigma = 0.3; num_runs = 10; x = 0; y = 0
+sigma = 0.3; num_runs = 500; x = 0; y = 0
 
 for energy in energies:
 

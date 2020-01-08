@@ -20,7 +20,6 @@ class Particle:
     def move(self, step):
         self.z += step
 
-
     def interact(self):
         '''This should implement the model for interaction.
         The base class particle doesn't interact at all'''
