@@ -10,36 +10,37 @@ passive_depth = 1
 passive_X0 = 1
 passive = model.Layer('lead', passive_X0, passive_depth, 1.0, 1, 0.0)
 active_depth = 1
-active_width = 32
-num_cells = 32
+active_width = 30
+num_cells = 30
 print("Cell size = " + str(active_width/num_cells))
 active = model.Layer('scin', 0.01, active_depth, active_width, num_cells, 1.0)
 
-num_layers = 30
+num_layers = 3
 mycal = model.Calorimeter()
 for i in range(num_layers):
     mycal.add_layers([passive, active])
-    
+
 counts_all_runs = []
-en1 = np.array([0.1])
-en2 = np.arange(2.0, 42.0, 2.0)
-energies = np.append(en1, en2)
+#en1 = np.array([0.1])
+#en2 = np.arange(2.0, 42.0, 2.0)
+#energies = np.append(en1, en2)
+energies = np.array([20.0])
 direct = "simulations/single_hits/"
 
 energies_dict = {}
 
 # some predefined particle properties
-sigma = 0.3; num_runs = 10; x = 0; y = 0
+sigma = 0.05; num_runs = 10; x = 0; y = 0
 
 for energy in energies:
 
     # Define calorimeter
-    mycal.reset()    
+    mycal.reset()
     print("* Initialising incident particle *")
-    
+
     # particle properties
-    electron = model.Electron(0.0, x, y, energy, 0, 0)
-    
+    electron = model.Electron(0.0, x, y, energy, [0.01,0.15,np.sqrt(1-(0.01**2+0.15**2))])
+
     print("Energy: ", energy)
     print("* ...SIMULATING... *")
     # Run simulation
@@ -48,24 +49,24 @@ for energy in energies:
     # counts by layer
     _ , counts_layers_run = sim.simulate(electron, sigma, num_runs)
     toc = time.time()
-    
+
     nested_dict = {"Energy": energy, "num_runs": num_runs,
                   "enterx": x, "entery": y, "sigma": sigma, "time_taken": toc-tic}
     energies_dict[str(energy)] = nested_dict
-    
+
     print("* SIMULATION DONE! *")
     print("That took " + str(toc-tic) + " seconds")
-    
+
     # Define directory
     data_filename = '%.1fGeV_%iruns_data.h5' %(energy,num_runs)
     data_directory = direct + data_filename
-    
-    # Save data from every run  
+
+    # Save data from every run
     f = h5py.File(data_directory, "w")
     f.create_dataset('dataset_1', dtype='f', data=counts_layers_run)
     f.close()
     print("* Data saved! *")
-    
+
     dict_filename = '%.1fGeV_%iruns_dict.p' %(energy,num_runs)
     dict_direct = direct + dict_filename
     with open(dict_direct, 'wb') as handle:

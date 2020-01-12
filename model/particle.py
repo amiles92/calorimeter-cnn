@@ -6,7 +6,7 @@ import csv
 class Particle:
     '''Base class for particles'''
 
-    def __init__(self, name, z, x, y, energy, ionise, cutoff, xangle, yangle):
+    def __init__(self, name, z, x, y, energy, ionise, cutoff, p):
         self.name = name
         self.z = z
         self.energy = energy
@@ -14,11 +14,12 @@ class Particle:
         self.cutoff = cutoff
         self.y = y
         self.x = x
-        self.xangle = xangle
-        self.yangle = yangle
+        self.p = p
 
     def move(self, step):
-        self.z += step
+        self.z += step * self.p[2]
+        self.x += step * self.p[0]
+        self.y += step * self.p[1]
 
 
     def interact(self):
@@ -38,8 +39,8 @@ class Particle:
 
 class Electron(Particle):
 
-    def __init__(self, z, x, y, energy, xangle, yangle):
-        super(Electron, self).__init__('elec', z, x, y, energy, True, 0.01, xangle, yangle)
+    def __init__(self, z, x, y, energy, p):
+        super(Electron, self).__init__('elec', z, x, y, energy, True, 0.01, p)
 
     def interact(self, std):
         '''An electron radiates xangle photon. Make the energy split evenly.'''
@@ -48,19 +49,22 @@ class Electron(Particle):
         if self.energy > self.cutoff:
 
             split = random.random()
-            new1, new2 = self.offset(std)
-            xangle = self.xangle
-            yangle = self.yangle
-
-            particles = [Electron(self.z, self.x + new1[0] + xangle, self.y + new1[1] + yangle, split*self.energy, xangle, yangle), Photon(self.z, self.x + new2[0] + xangle,
-                            self.y + new2[1] + yangle, (1.0-split)*self.energy, xangle, yangle)]
+            new = self.offset(std)
+            p = self.p
+            angles = np.array([[p[2] / p[0], p[2] / p[1]],
+                               [p[2] / p[0], p[2] / p[1]]])
+            angles[:][0] = (np.pi / 2) - angles[:][0]
+            angles += new
+            new_p_dir = np.array([1 - angles[:,0]**2 / 2), angles[:,0] * angles[:,1], angles[:,0] * (1 - angles[:,1]**2 / 2)])
+            particles = [Electron(self.z, self.x, self.y, split*self.energy, new_p_dir[:,0]), Photon(self.z, self.x,
+                            self.y, (1.0-split)*self.energy, new_p_dir[:,1])]
         return particles
 
 
 class Photon(Particle):
 
-    def __init__(self, z, x, y, energy, xangle, yangle):
-        super(Photon, self).__init__('phot', z, x, y, energy, False, 0.01, xangle, yangle)
+    def __init__(self, z, x, y, energy, p):
+        super(Photon, self).__init__('phot', z, x, y, energy, False, 0.01, p)
 
     def interact(self, std):
         '''A photon splits into an electron and xangle positron. Make the energy split randomly.'''
@@ -68,12 +72,15 @@ class Photon(Particle):
         if self.energy > self.cutoff:
 
             split = random.random()
-            new1, new2 = self.offset(std)
-            xangle = self.xangle
-            yangle = self.yangle
-
-            particles = [Electron(self.z, self.x + new1[0] + xangle, self.y + new1[1] + yangle, split*self.energy, xangle, yangle), Electron(self.z, self.x + new2[0] + xangle,
-                            self.y + new2[1] + yangle, (1.0-split)*self.energy, xangle, yangle)]
+            new = self.offset(std)
+            p = self.p
+            angles = np.array([[p[2] / p[0], p[2] / p[1]],
+                               [p[2] / p[0], p[2] / p[1]]])
+            angles[:][0] = (np.pi / 2) - angles[:][0]
+            angles += new
+            new_p_dir = np.array([1 - angles[:,0]**2 / 2), angles[:,0] * angles[:,1], angles[:,0] * (1 - angles[:,1]**2 / 2)])
+            particles = [Electron(self.z, self.x, self.y, split*self.energy, new_p_dir[:,0]), Electron(self.z, self.x,
+                            self.y, (1.0-split)*self.energy, new_p_dir[:,1])]
 
         return particles
 
