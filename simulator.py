@@ -26,7 +26,7 @@ direct = "simulations/single_hits/"
 energies_dict = {}
 
 # some predefined particle properties
-sigma = 0.3; num_runs = 10; x = 0; y = 0
+sigma = 0.05; num_runs = 10; x = 0; y = 0
 
 for energy in energies:
 
@@ -35,7 +35,7 @@ for energy in energies:
     print("* Initialising incident particle *")
 
     # particle properties
-    electron = model.Electron(0.0, x, y, energy, 0, 0)
+    electron = model.Electron(0.0, x, y, energy, [0.01,0.15,np.sqrt(1-(0.01**2+0.15**2))])
 
     print("Energy: ", energy)
     print("* ...SIMULATING... *")

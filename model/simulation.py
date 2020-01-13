@@ -18,13 +18,13 @@ class Simulation:
         for i in range(number):
 
             self._calorimeter.reset()
-            particles = [copy.copy(particle)]
+            particles = [copy.deepcopy(particle)]
             offvals = []
             iter = 0
             while iter < 1000:
                 next = []
-                for p in particles:
-                    newparticles = self._calorimeter.step(p, std, 0.1)
+                for particle in particles:
+                    newparticles = self._calorimeter.step(particle, std, 0.1)
                     next.extend(newparticles)
                 particles = next
                 iter += 1
@@ -43,12 +43,12 @@ class Simulation:
 
         for part in particles_list:
 
-            particles = [copy.copy(part)]
+            particles = [copy.deepcopy(part)]
             iter = 0
             while iter < 1000:
                 next = []
-                for p in particles:
-                    newparticles = self._calorimeter.step(p, std, 0.1)
+                for particle in particles:
+                    newparticles = self._calorimeter.step(particle, std, 0.1)
                     next.extend(newparticles)
                 particles = next
                 iter += 1
