@@ -9,13 +9,17 @@ print("* Initialising calorimeter *")
 
 num_cells = 30
 mycal = model.Calorimeter()
-active_component = [0.01, 1.0, 1.0]
-passive_component = [1, 1.5, 0.0]
-# component = [material density, cell_height, response]
+null = [10.0, 0.0, 1.0]
+gagg = [15.9, 1.0, 1.0]  #MR = 21.0 mm
+yag  = [35.3, 1.0, 1.0]  #MR = 27.6 mm
+lead = [5.612, 1.5, 0.0] #MR = 16.0 mm
+tung = [3.504, 1.5, 0.0] #MR = 09.3 mm
+# component = [material radiation length, cell height, response]
 depth = [40, 100]
-short = model.Layer('short',depth[0], num_cells, passive_component, active_component)
-long = model.Layer('long', depth[1], num_cells, passive_component, active_component)
+short = model.Layer('short', depth[0], num_cells, lead, gagg)
+long = model.Layer('long',   depth[1], num_cells, lead, gagg)
 mycal.add_layers([short, long])
+mat = 'lead'
 
 counts_all_runs = []
 en1 = np.array([0.1])
@@ -26,8 +30,10 @@ direct = "simulations/single_hits/"
 energies_dict = {}
 
 # some predefined particle properties
-sigma = 0.05; num_runs = 10; x = 0; y = 0
-
+centre = num_cells * lead[1] / 2
+sigma = 0.0005; num_runs = 10; x = centre; y = centre
+# for sig in range(1,11):
+#     sigma = sig * 10**(-4)
 for energy in energies:
 
     # Define calorimeter
@@ -35,7 +41,6 @@ for energy in energies:
     print("* Initialising incident particle *")
 
     # particle properties
-    electron = model.Electron(0.0, x, y, energy, [0.01,0.15,np.sqrt(1-(0.01**2+0.15**2))])
 
     print("Energy: ", energy)
     print("* ...SIMULATING... *")

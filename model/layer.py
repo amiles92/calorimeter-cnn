@@ -49,41 +49,37 @@ class Layer:
             if response > 0:
                 y = particle.y
                 x = particle.x
+                p = particle.p
                 cellsize = self._cellsize
-                midcell = int(np.floor(self._numcells/2))
-                y_ = y/cellsize
-                if (y_ <= 0.0 or y_ >= 1.0) and abs(y_) <= midcell:
-                    ycell = int(np.floor(y_ + midcell))
-                elif (y_ >= 0.0) and y_ <= 1.0:
-                    ycell = midcell
-                else:
-                    ycell = self._numcells + 1
+                h = self._height
 
-                x_ = x/cellsize
-                if (x_ <= 0.0 or x_ >= 1.0) and abs(x_) <= midcell:
-                    xcell = int(np.floor(x_ + midcell))
-                elif (x_ >= 0.0) and x_ <= 1.0:
-                    xcell = midcell
-                else:
-                    xcell = self._numcells + 1
-
-                if abs(xcell) < self._numcells and abs(ycell) < self._numcells:
-                    self._cells[ycell, xcell] += count
-                else:
+                if x > h or x < 0 or y < 0 or y > h:
                     self._missed += count
+                else:
+                    if y % cellsize == 0:
+                        y_ = int(np.floor(y / cellsize) - int(np.sign(p[1]) + 1) // 2)
+                    else:
+                        y_ = int(y / cellsize)
+                    if x % cellsize == 0:
+                        x_ = int(np.floor(x / cellsize) - int(np.sign(p[0]) + 1) // 2)
+                    else:
+                        x_ = int(x / cellsize)
+                    #print(x_, y_, cellsize)
+                    self._cells[y_, x_] += count
 
     def interact(self, particle, std, step):
         '''Let a particle interact (bremsstrahlung or pair production). The interaction
-        length is assumed to be the same for electrons and photons.'''
+        length for photons if 9/7 times that of an electron.'''
         location = self.cellpart(particle)
         if location == 'o':
-            material = self._material_o * step
+            material = self._material_o
         else:
-            material = self._material_i * step
+            material = self._material_i
         particles = [particle]
         r = random.random()
-
-        if r < material:
+        if particle.name == 'phot':
+            material *= 9/7
+        if r < step / material:
             particles = particle.interact(std)
 
         return particles
@@ -95,11 +91,61 @@ class Layer:
             outersize = (cellsize - innersize) / 2
             y = particle.y
             x = particle.x
+            p = particle.p
             ycell = y % cellsize
             xcell = x % cellsize
-            if (ycell <= outersize or ycell >= outersize + innersize) and (xcell <= outersize or xcell >= outersize + innersize):
-                return 'i'
+            if xcell > outersize and xcell < outersize + innersize:
+                if ycell > outersize and ycell < outersize + innersize:
+                    return 'i'
+                if (ycell == outersize and p[1] > 0) or (ycell == outersize + innersize and p[1] < 0):
+                    return 'i'
+            if ycell > outersize and ycell < outersize + innersize:
+                if (xcell == outersize and p[0] > 0) or (xcell == outersize + innersize and p[0] < 0):
+                    return 'i'
         return 'o'
 
+    def dist_to_boundary(self, particle, z):
+
+        x, y, p = particle.x, particle.y, particle.p
+        cellsize = self._cellsize
+        boundary_dist = [0,0,(self._thickness - z) / p[2]]
+        if self._two_mats:
+            innersize = self._innersize
+            outersize = (cellsize - innersize) / 2
+            coords = [x,y]
+            for i in range(2):
+                if p[i] == 0:
+                    boundary_dist[i] = boundary_dist[2] * 100
+                    continue
+                cell = coords[i] / cellsize
+                if cell == 0:
+                    dist = outersize
+                elif cell < outersize:
+                    dist = cell - outersize * ((np.sign(p[0]) + 1) / 2)
+                elif cell == outersize:
+                    dist = outersize + innersize * (np.sign(p[0]) + 1) / 2
+                elif cell < innersize:
+                    dist = cell - (outersize * ((np.sign(p[0]) + 1) / 2) + innersize)
+                elif cell == outersize + innersize:
+                    dist = outersize + (innersize - outersize) * (np.sign(p[0]) + 1) / 2
+                else:
+                    dist = innersize + outersize * (np.sign(p[0]) + 3) / 2 - cell
+                boundary_dist[i] = abs(dist / p[i])
+        else:
+            xdist = x - self._height * (np.sign(p[0]) + 1) / 2
+            ydist = y - self._height * (np.sign(p[1]) + 1) / 2
+            if p[0] != 0:
+                boundary_dist[0] = abs(xdist / p[0])
+            else:
+                boundary_dist[0] = boundary_dist[2] * 100
+            if p[1] != 0:
+                boundary_dist[1] = abs(ydist / p[1])
+            else:
+                boundary_dist[1] = boundary_dist[2] * 100
+        fin = min(boundary_dist)
+        if fin <= 10 ** (-5):
+            print('floating point error:\nx:',x,'y:',y,'z:',z,'p:',p)
+            fin += 0.0001
+        return fin
     def __str__(self):
         return f'{self._name:10} {self._material:.3f} {self._thickness:.2f} {self._height:.2f} cm {self._ionisation:.3f}'

@@ -19,15 +19,14 @@ class Simulation:
 
             self._calorimeter.reset()
             particles = [copy.deepcopy(particle)]
-            offvals = []
-            iter = 0
-            while iter < 1000:
+            next = True
+            rad_lengths = 0.01 # how many radiation lengths to move per step
+            while next != []:
                 next = []
-                for particle in particles:
-                    newparticles = self._calorimeter.step(particle, std, 0.1)
+                for p in particles:
+                    newparticles = self._calorimeter.step(p, std, rad_lengths)
                     next.extend(newparticles)
                 particles = next
-                iter += 1
 
             ionisations.append(self._calorimeter.ionisations())
             ions_layers.append(self._calorimeter.ions_by_layer())
@@ -44,14 +43,14 @@ class Simulation:
         for part in particles_list:
 
             particles = [copy.deepcopy(part)]
-            iter = 0
-            while iter < 1000:
+            next = True
+            rad_lengths = 0.01 # how many radiation lengths to move per step
+            while next != []:
                 next = []
-                for particle in particles:
-                    newparticles = self._calorimeter.step(particle, std, 0.1)
+                for p in particles:
+                    newparticles = self._calorimeter.step(p, std, rad_lengths)
                     next.extend(newparticles)
                 particles = next
-                iter += 1
 
             new_ions = self._calorimeter.ionisations()
             ionisations = np.add(ionisations, new_ions)

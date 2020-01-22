@@ -13,7 +13,9 @@ class Calorimeter:
             self.z = z
             self.layer = layer
 
-    def __init__(self, volumes=[]):
+    def __init__(self, volumes=False):
+        if volumes == False:
+            volumes = []
         self._volumes = volumes.copy()
         self._zend = 0
 
@@ -27,26 +29,34 @@ class Calorimeter:
         for l in layers:
             self.add_layer(l)
 
-    def step(self, particle, std, step):
+    def step(self, particle, std, rad_lengths):
         '''Move a particle by the amount step forward in the calorimeter,
         Return a list of particles created during
         the step. If particle doesn't do anything it is just stepped forward.'''
 
+        #print('\n\n\n\nstarting')
         involume = False
         for volume in self._volumes:
+            #print('looping through:', volume)
             if (particle.z >= volume.z) and (particle.z < volume.z + volume.layer._thickness):
-                involume = True
+                if 0 <= particle.x <= volume.layer._height and 0 <= particle.y <= volume.layer._height:
+                #print('made it in')
+                    involume = True
+                    z_in_layer = particle.z - volume.z
+                layer = volume.layer
                 break
 
+        if not involume:
+            #print(particle.z)
+            return []
+        #print('stopped looping')
         # Looping through every layer to check if particle within that layer
         # If found, then break
-        particle.move(step)
-
+        #print(particle.z)
+        step = particle.move(layer, rad_lengths, z_in_layer)
         particles = [particle]
-        if involume:
-            layer = volume.layer
-            layer.ionise(particle, step)
-            particles = layer.interact(particle, std, step)
+        layer.ionise(particle, step)
+        particles = layer.interact(particle, std, step)
 
         return particles
 
